@@ -1,0 +1,127 @@
+# app 的唯一 id,上架到商店需要保证不要冲突,尽量使用开发者自己的域名作为后缀。
+package: cloud.lazycat.app.liu.semaphore
+# app 的版本
+version: 2.16.31
+
+name: Semaphore
+keywords: semaphore, ansible, automation
+description: 自托管的 Ansible 自动化平台，帮助团队集中管理自动化任务、凭证与审批流程
+
+# 软件名称,会显示在启动器之类的地方
+locales:
+  zh:
+    name: Semaphore 自动化平台
+    description: |
+      ## Semaphore 自动化平台
+
+      Semaphore 是一个开源的 Ansible Web 控制台，提供任务编排、计划任务和凭证管理能力，帮助团队安全地运行自动化工作流。
+
+      **官方网站：** https://semaphoreui.com
+      **仓库地址：** https://github.com/lazycatapps/semaphore.git
+
+      ## 主要功能
+
+      - 🧩 可视化管理与执行 Ansible Playbook 与任务
+      - 🗓️ 支持计划任务、定时执行与任务审批流程
+      - 🔐 集成凭证与密钥集中管理，简化团队协作
+      - 🔭 提供实时日志、任务状态与审计记录
+
+      ## 应用价值
+
+      Semaphore 为 DevOps 团队提供统一的自动化门户，避免在多套脚本与临时方案之间切换，降低人为失误风险。
+      借助集中化的权限控制、审计日志与审批流，平台可以满足企业合规要求，实现跨团队的安全协作。
+      同时，丰富的调度能力让运维团队能够对定时任务、批量部署与应急方案进行可视化管理，加速交付效率。
+
+      ## 默认账号
+
+      - 用户名：`admin`
+      - 密码：`admin`
+  en:
+    name: Semaphore
+    description: |
+      ## Semaphore Automation Platform
+
+      Semaphore is an open-source Ansible web console that streamlines job orchestration, scheduling, and credential management for self-hosted automation teams.
+
+      **Official site:** https://semaphoreui.com
+      **Repository:** https://github.com/lazycatapps/semaphore.git
+
+      ## Core Features
+
+      - 🧩 Visual management and execution of Ansible playbooks and ad-hoc jobs
+      - 🗓️ Built-in scheduling for recurring runs and approval workflows
+      - 🔐 Centralized credential and secret management for collaborative teams
+      - 🔭 Live job logs, status tracking, and audit history
+
+      ## Why It Matters
+
+      Semaphore unifies automation initiatives so teams can move away from ad-hoc scripts and one-off tooling, reducing operational risk.
+      Its access controls, audit trails, and approval policies help organizations meet compliance requirements while enabling secure collaboration.
+      The scheduling and workflow engine turns routine maintenance, fleet-wide deployments, and emergency runbooks into predictable, repeatable processes that accelerate delivery.
+
+      ## Default Credentials
+
+      - Username: `admin`
+      - Password: `admin`
+
+# 软件本身的 license
+license: https://github.com/semaphoreui/semaphore?tab=MIT-1-ov-file#readme
+
+# 软件的主页,会在商店等地方体现
+homepage: https://github.com/semaphoreui/semaphore
+
+# lpk 的作者,会在商店等地方体现
+author: liu
+
+# application 作为一个特殊的 container 运行，对应的 service 名称为固定的`app`， 其他 service 可以通过此名称与 app 进行通讯
+application:
+  # 是否存在后台任务， 若存在则系统不会对此 app 进行主动休眠等操作
+  background_task: true
+
+  # 期望的 app 域名，如果系统中已经有对应域名则会提示用户选择其他域名。 最终 app 分配到的域名以/lzcapp/run/app.subdomain 为准
+  subdomain: semaphore
+
+  routes:
+    - /=http://server:3000
+
+  public_path:
+    - /                         # 无需登录即可访问
+
+  depends_on:
+    - server
+
+  # 是否启用多实例
+  multi_instance: false
+
+services:
+  server:
+    # lzc-cli appstore copy-image docker.io/semaphoreui/semaphore:latest
+    image: registry.lazycat.cloud/liu/semaphoreui/semaphore:41a9e42172a5b856
+    environment:
+      - SEMAPHORE_ADMIN_NAME=Admin
+      - SEMAPHORE_ADMIN=admin
+      - SEMAPHORE_ADMIN_PASSWORD=admin
+      - SEMAPHORE_ADMIN_EMAIL=admin@localhost
+      - SEMAPHORE_WEB_ROOT=
+      - SEMAPHORE_ACCESS_KEY_ENCRYPTION=IlRqgrrO5Gp27MlWakDX1xVrPv4jhoUx+ARY+qGyDxQ=
+      - SEMAPHORE_DB_DIALECT=postgres
+      - SEMAPHORE_DB_HOST=db
+      - SEMAPHORE_DB_PORT=5432
+      - SEMAPHORE_DB_USER=semaphore
+      - SEMAPHORE_DB_PASS=semaphore
+      - SEMAPHORE_DB=semaphore
+    depends_on:
+      - db
+    binds:
+      - /lzcapp/var/semaphore:/var/lib/semaphore
+  db:
+    # lzc-cli appstore copy-image postgres:14.3
+    image: registry.lazycat.cloud/liu/library/postgres:ab0e6c40cbd2a53a
+    environment:
+      - POSTGRES_USER=semaphore
+      - POSTGRES_PASSWORD=semaphore
+      - POSTGRES_DB=semaphore
+      - PGDATA=/var/lib/postgresql/data
+    binds:
+      # 因为基础镜像中声明了 VOLUME /var/lib/postgresql/data,所以这里的绑定必须使用绝对路径
+      - /lzcapp/var/postgresql/data:/var/lib/postgresql/data
